@@ -2,7 +2,8 @@ name: Compare CSV vs SQL Server
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -19,7 +20,8 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: pip install pandas pyodbc
+        run: |
+          pip install pandas pyodbc
 
       - name: Compare CSV vs SQL
         shell: powershell
@@ -29,11 +31,11 @@ jobs:
           import pyodbc
           import sys
 
-          # Load CSV
-          csv_path = r'E:\SCALER\GITHUB\mytest.csv'
+          # Load CSV from repo
+          csv_path = 'data/mytest.csv'
           df_csv = pd.read_csv(csv_path)
 
-          # Connect SQL Server
+          # SQL Server connection
           conn_str = (
               'DRIVER={ODBC Driver 17 for SQL Server};'
               'SERVER=DESKTOP-DUSRBIG\SQLEXPRESS;'
@@ -42,8 +44,9 @@ jobs:
 
           conn = pyodbc.connect(conn_str)
 
-          # Read table
-          df_sql = pd.read_sql('SELECT * FROM YourTable', conn)
+          # Read SQL table
+          query = 'SELECT * FROM YourTable'
+          df_sql = pd.read_sql(query, conn)
 
           conn.close()
 
