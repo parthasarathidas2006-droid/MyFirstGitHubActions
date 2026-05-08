@@ -1,0 +1,60 @@
+name: Compare CSV vs SQL Server
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  compare-data:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas pyodbc
+
+      - name: Compare CSV vs SQL
+        shell: powershell
+        run: |
+          python -c "
+import pandas as pd
+import pyodbc
+import sys
+
+# 1. Load CSV
+csv_path = r'E:\SCALER\GITHUB\mytest.csv'
+df_csv = pd.read_csv(csv_path)
+
+# 2. Connect to SQL Server using Windows Authentication
+conn_str = (
+    'DRIVER={ODBC Driver 17 for SQL Server};'
+    'SERVER=DESKTOP-DUSRBIG\SQLEXPRESS;'
+    'Trusted_Connection=yes;'
+)
+
+conn = pyodbc.connect(conn_str)
+
+# 3. Read SQL table
+df_sql = pd.read_sql('SELECT * FROM YourTable', conn)
+
+conn.close()
+
+# 4. Compare CSV and SQL data
+diff = pd.concat([df_csv, df_sql]).drop_duplicates(keep=False)
+
+if not diff.empty:
+    print('Discrepancies found:')
+    print(diff)
+    sys.exit(1)
+else:
+    print('No discrepancies found.')
+"
